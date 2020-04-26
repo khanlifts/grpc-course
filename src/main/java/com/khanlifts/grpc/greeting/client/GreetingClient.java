@@ -1,10 +1,7 @@
 package com.khanlifts.grpc.greeting.client;
 
 import com.proto.dummy.DummyServiceGrpc;
-import com.proto.greet.GreetRequest;
-import com.proto.greet.GreetResponse;
-import com.proto.greet.GreetServiceGrpc;
-import com.proto.greet.Greeting;
+import com.proto.greet.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -27,21 +24,32 @@ public class GreetingClient {
     // create a greet service client (blocking - synchronous)
     GreetServiceGrpc.GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel);
 
-    // create a protocol buffer greeting message
-    Greeting greeting = Greeting.newBuilder()
-      .setFirstName("Cyril")
-      .setLastName("Khan")
+    // UNARY
+//    // create a protocol buffer greeting message
+//    Greeting greeting = Greeting.newBuilder()
+//      .setFirstName("Cyril")
+//      .setLastName("Khan")
+//      .build();
+//
+//    // do the same for a greet request
+//    GreetRequest greetRequest = GreetRequest.newBuilder()
+//      .setGreeting(greeting)
+//      .build();
+//
+//    // call the RPC and get back a GreetResponse (protocol buffers)
+//    GreetResponse greetResponse = greetClient.greet(greetRequest);
+//
+//    System.out.println(greetResponse.getResult());
+
+    // SERVER STREAMING
+    // prepare the request
+    GreetManyTimesRequest greetManyTimesRequest = GreetManyTimesRequest.newBuilder()
+      .setGreeting(Greeting.newBuilder().setFirstName("Cyril"))
       .build();
 
-    // do the same for a greet request
-    GreetRequest greetRequest = GreetRequest.newBuilder()
-      .setGreeting(greeting)
-      .build();
-
-    // call the RPC and get back a GreetResponse (protocol buffers)
-    GreetResponse greetResponse = greetClient.greet(greetRequest);
-
-    System.out.println(greetResponse.getResult());
+    // stream responses (blocking)
+    greetClient.greetManyTimes(greetManyTimesRequest).forEachRemaining(greetManyTimesResponse ->
+      System.out.println(greetManyTimesResponse.getResult()));
 
     System.out.println("Shutting down channel");
     channel.shutdown();

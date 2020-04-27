@@ -1,9 +1,7 @@
 package com.grpc.sum.server;
 
-import com.proto.sum.Sum;
-import com.proto.sum.SumRequest;
-import com.proto.sum.SumResponse;
-import com.proto.sum.SumServiceGrpc;
+import com.proto.sum.*;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 public class SumServiceImpl extends SumServiceGrpc.SumServiceImplBase {
@@ -29,5 +27,27 @@ public class SumServiceImpl extends SumServiceGrpc.SumServiceImplBase {
     // complete the RPC call
     responseObserver.onCompleted();
 
+  }
+
+  @Override
+  public void squareRoot(SquareRootRequest request, StreamObserver<SquareRootResponse> responseObserver) {
+
+    int number = request.getNumber();
+
+    if (number >= 0) {
+      double number_root = Math.sqrt(number);
+      responseObserver.onNext(
+        SquareRootResponse.newBuilder()
+          .setNumberRoot(number_root)
+          .build()
+      );
+      responseObserver.onCompleted();
+    } else {
+      responseObserver.onError(
+        Status.INVALID_ARGUMENT.withDescription("The number being sent is not positive")
+          .augmentDescription("Number sent: " + number)
+        .asRuntimeException()
+      );
+    }
   }
 }

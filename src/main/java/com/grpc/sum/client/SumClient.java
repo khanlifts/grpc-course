@@ -1,11 +1,9 @@
 package com.grpc.sum.client;
 
-import com.proto.sum.Sum;
-import com.proto.sum.SumRequest;
-import com.proto.sum.SumResponse;
-import com.proto.sum.SumServiceGrpc;
+import com.proto.sum.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 
 public class SumClient {
 
@@ -16,8 +14,17 @@ public class SumClient {
       .usePlaintext() // force ssl to be deactivated for the dev phase
       .build();
 
+//    doSumCall(channel);
+
+    doErrorCall(channel);
+
+    System.out.println("Shutting down channel");
+    channel.shutdown();
+  }
+
+  public static void doSumCall (ManagedChannel channel) {
     // create a greet service client (blocking)
-    SumServiceGrpc.SumServiceBlockingStub sumClient = SumServiceGrpc.newBlockingStub(channel);
+    SumServiceGrpc.SumServiceBlockingStub sumBlockingStub = SumServiceGrpc.newBlockingStub(channel);
 
     // create a protocol buffer sum message
     Sum sum = Sum.newBuilder()
@@ -31,11 +38,24 @@ public class SumClient {
       .build();
 
     // call the RPC and get back a SumResponse (protocol buffer)
-    SumResponse sumResponse = sumClient.sum(sumRequest);
+    SumResponse sumResponse = sumBlockingStub.sum(sumRequest);
 
     System.out.println(sumResponse.getResult());
+  }
 
-    System.out.println("Shutting down channel");
-    channel.shutdown();
+  public static void doErrorCall(ManagedChannel channel) {
+    SumServiceGrpc.SumServiceBlockingStub blockingStub = SumServiceGrpc.newBlockingStub(channel);
+
+    int inputNumber = -1;
+    try {
+      SquareRootResponse squareRootResponse = blockingStub.squareRoot(
+        SquareRootRequest.newBuilder()
+          .setNumber(inputNumber)
+          .build()
+      );
+    } catch (StatusRuntimeException e) {
+      System.out.println("Got an exception for square root!");
+      e.printStackTrace();
+    }
   }
 }

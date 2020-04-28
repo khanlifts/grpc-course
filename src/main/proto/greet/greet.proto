@@ -26,10 +26,22 @@ message GreetManyTimesResponse {
     string result = 1;
 }
 
+message GreetWithDeadlineRequest {
+    Greeting greeting = 1;
+}
+
+message GreetWithDeadlineResponse {
+    string result = 1;
+}
+
 service GreetService {
     // unary
     rpc Greet(GreetRequest) returns (GreetResponse) {};
 
     // server stream
     rpc GreetManyTimes(GreetManyTimesRequest) returns (stream GreetManyTimesResponse) {};
+
+    // greet with deadlines
+    // this rpc will complete in no less than 300ms
+    rpc GreetWithDeadline(GreetWithDeadlineRequest) returns (GreetWithDeadlineResponse) {};
 }

@@ -35,16 +35,17 @@ public class SumServiceImpl extends SumServiceGrpc.SumServiceImplBase {
     int number = request.getNumber();
 
     if (number >= 0) {
-      double number_root = Math.sqrt(number);
+      double numberRoot = Math.sqrt(number);
       responseObserver.onNext(
         SquareRootResponse.newBuilder()
-          .setNumberRoot(number_root)
+          .setNumberRoot(numberRoot)
           .build()
       );
       responseObserver.onCompleted();
     } else {
       responseObserver.onError(
-        Status.INVALID_ARGUMENT.withDescription("The number being sent is not positive")
+        Status.INVALID_ARGUMENT
+          .withDescription("The number being sent is not positive")
           .augmentDescription("Number sent: " + number)
         .asRuntimeException()
       );

@@ -38,7 +38,7 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
           .build();
 
         responseObserver.onNext(response);
-        Thread.sleep(1000L);
+        Thread.sleep(1L);
       }
     } catch (InterruptedException e) {
       e.printStackTrace();

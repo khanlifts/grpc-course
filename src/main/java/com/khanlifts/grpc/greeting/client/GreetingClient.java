@@ -1,6 +1,5 @@
 package com.khanlifts.grpc.greeting.client;
 
-import com.proto.dummy.DummyServiceGrpc;
 import com.proto.greet.*;
 import io.grpc.*;
 import io.grpc.stub.StreamObserver;
@@ -14,46 +13,18 @@ public class GreetingClient {
   public static void main(String[] args) {
     System.out.println("I am a client");
 
+    GreetingClient main = new GreetingClient();
+    main.run();
+  }
+
+  public void run() {
     ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
       .usePlaintext() // force ssl to be deactivated for the development phase
       .build();
 
-//    System.out.println("Creating Stub");
+//    doUnaryCall(channel);
 
-
-    // old and dummy
-    // DummyServiceGrpc.DummyServiceBlockingStub syncClient = DummyServiceGrpc.newBlockingStub(channel);
-    // DummyServiceGrpc.DummyServiceFutureStub asyncClient = DummyServiceGrpc.newFutureStub(channel);
-
-    // create a greet service client (blocking - synchronous)
-    GreetServiceGrpc.GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel);
-
-    // UNARY
-//    // create a protocol buffer greeting message
-//    Greeting greeting = Greeting.newBuilder()
-//      .setFirstName("Cyril")
-//      .setLastName("Khan")
-//      .build();
-//
-//    // do the same for a greet request
-//    GreetRequest greetRequest = GreetRequest.newBuilder()
-//      .setGreeting(greeting)
-//      .build();
-//
-//    // call the RPC and get back a GreetResponse (protocol buffers)
-//    GreetResponse greetResponse = greetClient.greet(greetRequest);
-//
-//    System.out.println(greetResponse.getResult());
-
-    // SERVER STREAMING
-    // prepare the request
-//    GreetManyTimesRequest greetManyTimesRequest = GreetManyTimesRequest.newBuilder()
-//      .setGreeting(Greeting.newBuilder().setFirstName("Cyril"))
-//      .build();
-
-    // stream responses (blocking)
-//    greetClient.greetManyTimes(greetManyTimesRequest).forEachRemaining(greetManyTimesResponse ->
-//      System.out.println(greetManyTimesResponse.getResult()));
+//    doServerStreamingCall(channel);
 
     doBidiStreamingCall(channel);
 
@@ -64,12 +35,49 @@ public class GreetingClient {
     channel.shutdown();
   }
 
+  private void doUnaryCall(ManagedChannel channel) {
+    // create a greet service client (blocking - synchronous)
+    GreetServiceGrpc.GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel);
+
+    // create a protocol buffer greeting message
+    Greeting greeting = Greeting.newBuilder()
+      .setFirstName("Cyril")
+      .setLastName("Khan")
+      .build();
+
+    // do the same for a greet request
+    GreetRequest greetRequest = GreetRequest.newBuilder()
+      .setGreeting(greeting)
+      .build();
+
+    // call the RPC and get back a GreetResponse (protocol buffers)
+    GreetResponse greetResponse = greetClient.greet(greetRequest);
+
+    System.out.println(greetResponse.getResult());
+  }
+
+  private void doServerStreamingCall(ManagedChannel channel) {
+    // create a greet service client (blocking - synchronous)
+    GreetServiceGrpc.GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel);
+
+    // create request
+    GreetManyTimesRequest greetManyTimesRequest = GreetManyTimesRequest.newBuilder()
+      .setGreeting(Greeting.newBuilder().setFirstName("Cyril"))
+      .build();
+
+    // stream responses (blocking)
+    greetClient.greetManyTimes(greetManyTimesRequest).forEachRemaining(greetManyTimesResponse ->
+      System.out.println(greetManyTimesResponse.getResult()));
+  }
+
   private static void doBidiStreamingCall(Channel channel) {
     GreetServiceGrpc.GreetServiceStub asyncClient = GreetServiceGrpc.newStub(channel);
 
     CountDownLatch latch = new CountDownLatch(1);
 
-    StreamObserver<GreetEveryoneRequest> requestObserver = asyncClient.greetEveryone(new StreamObserver<GreetEveryoneResponse>() {
+    StreamObserver<GreetEveryoneRequest> requestObserver = asyncClient.
+      greetEveryone(new StreamObserver<GreetEveryoneResponse>() {
+
       @Override
       public void onNext(GreetEveryoneResponse value) {
         System.out.println("Response from server: " + value.getResult());
@@ -87,7 +95,7 @@ public class GreetingClient {
       }
     });
 
-    Arrays.asList("Cyril", "George", "Patricia", "Sven").forEach(name -> {
+    Arrays.asList("Cyril", "George", "Patricia", "Sven", "Hero", "Forrest").forEach(name -> {
 
       System.out.println("Sending: " + name);
 
@@ -98,7 +106,7 @@ public class GreetingClient {
       requestObserver.onNext(greetEveryoneRequest);
 
       try {
-        Thread.sleep(100);
+        Thread.sleep(250);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
@@ -123,6 +131,7 @@ public class GreetingClient {
       GreetWithDeadlineRequest greetWithDeadlineRequest = GreetWithDeadlineRequest.newBuilder()
         .setGreeting(deadLineGreeting)
         .build();
+
       GreetWithDeadlineResponse response = blockingStub.withDeadline(Deadline.after(3000, TimeUnit.MILLISECONDS))
         .greetWithDeadline(greetWithDeadlineRequest);
       System.out.println(response.getResult());
@@ -141,6 +150,7 @@ public class GreetingClient {
       GreetWithDeadlineRequest greetWithDeadlineRequest = GreetWithDeadlineRequest.newBuilder()
         .setGreeting(deadLineGreeting)
         .build();
+
       GreetWithDeadlineResponse response = blockingStub.withDeadline(Deadline.after(100, TimeUnit.MILLISECONDS))
         .greetWithDeadline(greetWithDeadlineRequest);
       System.out.println(response.getResult());

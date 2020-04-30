@@ -3,7 +3,10 @@ package com.khanlifts.grpc.greeting.client;
 import com.proto.dummy.DummyServiceGrpc;
 import com.proto.greet.*;
 import io.grpc.*;
+import io.grpc.stub.StreamObserver;
 
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class GreetingClient {
@@ -52,11 +55,62 @@ public class GreetingClient {
 //    greetClient.greetManyTimes(greetManyTimesRequest).forEachRemaining(greetManyTimesResponse ->
 //      System.out.println(greetManyTimesResponse.getResult()));
 
-    doUnaryCallWithDeadline(channel);
+    doBidiStreamingCall(channel);
+
+//    doUnaryCallWithDeadline(channel);
 
 
     System.out.println("Shutting down channel");
     channel.shutdown();
+  }
+
+  private static void doBidiStreamingCall(Channel channel) {
+    GreetServiceGrpc.GreetServiceStub asyncClient = GreetServiceGrpc.newStub(channel);
+
+    CountDownLatch latch = new CountDownLatch(1);
+
+    StreamObserver<GreetEveryoneRequest> requestObserver = asyncClient.greetEveryone(new StreamObserver<GreetEveryoneResponse>() {
+      @Override
+      public void onNext(GreetEveryoneResponse value) {
+        System.out.println("Response from server: " + value.getResult());
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        latch.countDown();
+      }
+
+      @Override
+      public void onCompleted() {
+        System.out.println("Server is done sending data");
+        latch.countDown();
+      }
+    });
+
+    Arrays.asList("Cyril", "George", "Patricia", "Sven").forEach(name -> {
+
+      System.out.println("Sending: " + name);
+
+      Greeting greeting = Greeting.newBuilder().setFirstName(name).build();
+
+      GreetEveryoneRequest greetEveryoneRequest = GreetEveryoneRequest.newBuilder().setGreeting(greeting).build();
+
+      requestObserver.onNext(greetEveryoneRequest);
+
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    });
+
+    requestObserver.onCompleted();
+
+    try {
+      latch.await(3, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   private static void doUnaryCallWithDeadline(Channel channel) {
